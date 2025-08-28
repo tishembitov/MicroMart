@@ -1,0 +1,26 @@
+api:
+  auth-service: lb://auth-service/api/v1/auth
+server:
+  port: 8080
+spring:
+  application:
+    name: api-gateway
+  profiles:
+    active: dev
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    urls:
+      - name: User Service
+        url: /user-service/api-docs
+      - name: Inventory Service
+        url: /inventory-service/api-docs
+      - name: Order Service
+        url: /order-service/api-docs
+      - name: Reviews Service
+        url: /reviews-service/api-docs
+      - name: Auth Service
+        url: /auth-service/api-docs
+    path: /swagger
+    groups-order: desc

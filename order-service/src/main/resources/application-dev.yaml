@@ -1,0 +1,36 @@
+eureka:
+  client:
+    fetch-registry: true
+    register-with-eureka: true
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+server:
+  error:
+    include-exception: true
+spring:
+  kafka:
+    bootstrap-servers: localhost:9092
+  mvc:
+    problemdetails:
+      enabled: false
+  datasource:
+    password: postgres
+    url: jdbc:postgresql://localhost:5435/orders
+    username: postgres
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+management:
+  otlp:
+    metrics:
+      export:
+        url: http://localhost:4318/v1/metrics
+        step: 10s
+    tracing:
+      endpoint: http://localhost:4318/v1/traces
+  tracing:
+    sampling:
+      probability: 1.0
