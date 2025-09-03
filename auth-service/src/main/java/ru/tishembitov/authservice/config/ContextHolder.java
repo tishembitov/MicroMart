@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 public class ContextHolder {
 
     public static final String CORRELATION_ID = "correlationId";
-    private static final ThreadLocal<ContextData> holder = new ThreadLocal<>();
+    private static final InheritableThreadLocal<ContextData> holder = new InheritableThreadLocal<>(); // Изменено на InheritableThreadLocal
 
     public void set(ContextData context) {
         holder.set(context);
@@ -23,24 +23,25 @@ public class ContextHolder {
 
     public boolean isAuthenticated() {
         var customContext = this.get();
-
+        if (customContext == null) {
+            return false;
+        }
         var isUsernameEmptyOrNull = StringUtils.isEmpty(customContext.getUsername());
-
         return !isUsernameEmptyOrNull && customContext.getUserId() != null;
     }
 
     public String getCorrelationId() {
-        return this.get()
-                   .getCorrelationId();
+        var context = this.get();
+        return context != null ? context.getCorrelationId() : null;
     }
 
     public Long getUserId() {
-        return this.get()
-                   .getUserId();
+        var context = this.get();
+        return context != null ? context.getUserId() : null;
     }
 
     public String getUsername() {
-        return this.get()
-                   .getUsername();
+        var context = this.get();
+        return context != null ? context.getUsername() : null;
     }
 }

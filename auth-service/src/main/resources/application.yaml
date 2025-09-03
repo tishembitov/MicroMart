@@ -7,6 +7,9 @@ spring:
     name: auth-service
   profiles:
     active: dev
+jwt:
+  secret: ${JWT_SECRET:your-256-bit-secret-key-for-jwt-token-generation-keep-it-secure}
+  access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:900000} # 15 минут в миллисекундах
 springdoc:
   api-docs:
     path: /api-docs

@@ -6,5 +6,6 @@ import ru.tishembitov.authservice.dto.UserDto;
 import java.util.Optional;
 
 public interface UserServiceClient {
-    Optional<UserDto> getUserForLogin(final LoginDto loginDto);
+    Optional<UserDto> getUserForLogin(LoginDto loginDto);
+    Optional<UserDto> getUserById(Long id);
 }

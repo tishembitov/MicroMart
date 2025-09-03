@@ -1,44 +1,45 @@
 package ru.tishembitov.authservice.service.impl;
 
-import ru.tishembitov.authservice.exception.AuthException;
-import ru.tishembitov.authservice.dto.LoginDto;
-import ru.tishembitov.authservice.dto.UserHeader;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import ru.tishembitov.authservice.jwt.JwtProperties;
+import ru.tishembitov.authservice.dto.*;
+import ru.tishembitov.authservice.exception.AuthException;
 import ru.tishembitov.authservice.jwt.JwtService;
 import ru.tishembitov.authservice.service.AuthService;
 import ru.tishembitov.authservice.service.UserServiceClient;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
-public class AuthServiceImpl
-        implements AuthService {
+public class AuthServiceImpl implements AuthService {
 
     private final JwtService jwtService;
     private final UserServiceClient userServiceClient;
+    private final JwtProperties jwtProperties;
 
     @Override
-    public String login(final LoginDto loginDto) {
+    public TokenResponseDto login(LoginDto loginDto) {
+        var user = userServiceClient.getUserForLogin(loginDto)
+                .orElseThrow(() -> new AuthException(AuthException.GENERIC_LOGIN_FAIL));
 
-        var user = this.userServiceClient.getUserForLogin(loginDto)
-                                         .orElseThrow(() -> new AuthException(AuthException.GENERIC_LOGIN_FAIL));
+        String accessToken = jwtService.generateAccessToken(user);
 
-        try {
-            return this.jwtService.generateToken(user);
-        } catch (JsonProcessingException e) {
-            throw new AuthException(AuthException.GENERIC_LOGIN_FAIL);
-        }
+        return TokenResponseDto.of(
+                accessToken,
+                jwtProperties.getAccessTokenExpiration() / 1000
+        );
     }
 
+    @Override
+    public UserHeader validateToken(String jwt) {
+        return jwtService.validateAndExtractUser(jwt)
+                .orElseThrow(() -> new AuthException("Invalid or expired token"));
+    }
 
     @Override
-    public UserHeader validateToken(final String jwt) {
-        return this.jwtService.extractUsername(jwt)
-                             .orElseThrow(() -> new AuthException(
-                                     HttpStatus.UNAUTHORIZED,
-                                     AuthException.GENERIC_LOGIN_FAIL
-                             ));
+    public void logout(Long userId) {
+        log.info("User {} logged out successfully", userId);
     }
 }

@@ -91,6 +91,7 @@ services:
     container_name: auth-service
     image: 8160202/auth-service:latest
     environment:
+      JWT_SECRET: 'your-production-secret-key-at-least-256-bits-long'
       SPRING_PROFILES_ACTIVE: 'docker'
     restart: unless-stopped
     depends_on:

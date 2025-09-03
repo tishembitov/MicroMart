@@ -21,6 +21,10 @@ spring:
   mvc:
     problemdetails:
       enabled: false
+jwt:
+  secret: ${JWT_SECRET:your-256-bit-secret-key-for-jwt-token-generation-keep-it-secure}
+  access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:900000} # 15 минут
+
 management:
   otlp:
     metrics:

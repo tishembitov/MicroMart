@@ -107,6 +107,7 @@ services:
       context: ../auth-service
     image: auth-service
     environment:
+      JWT_SECRET: 'your-secret-key-at-least-256-bits-long'
       SPRING_PROFILES_ACTIVE: 'docker'
     restart: unless-stopped
     depends_on:

@@ -1,105 +1,73 @@
 package ru.tishembitov.authservice.controller;
 
-import ru.tishembitov.authservice.config.ContextHolder;
-import ru.tishembitov.authservice.dto.LoginDto;
-import ru.tishembitov.authservice.service.AuthService;
-import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ru.tishembitov.authservice.dto.LoginDto;
+import ru.tishembitov.authservice.dto.TokenResponseDto;
+import ru.tishembitov.authservice.service.AuthService;
 
 @Slf4j
 @RestController
-@RequestMapping(value = {"api/v1/auth"})
+@RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
-@Tag(name = "Auth")
+@Tag(name = "Authentication")
 public class AuthController {
 
     private final AuthService authService;
-    private final ContextHolder contextHolder;
 
-    /**
-     * Performs the login by setting the jwt in the response header.
-     *
-     * @param request  The HttpServletRequest.
-     * @param loginDto The login dto.
-     * @return The jwt.
-     */
     @Operation(
-            summary = "Performs the login",
+            summary = "User login",
+            description = "Authenticate user and receive access token",
             responses = {
-                    @ApiResponse(responseCode = "204")
+                    @ApiResponse(responseCode = "200", description = "Successfully authenticated"),
+                    @ApiResponse(responseCode = "401", description = "Invalid credentials")
             }
     )
     @PostMapping("/login")
-    public ResponseEntity<Object> login(
-            HttpServletRequest request,
-            @Valid
-            @RequestBody
-            LoginDto loginDto
-    ) {
-
-        this.logRequest(request, loginDto);
-
-        var jwt = this.authService.login(loginDto);
-
-        var responseHeaders = new HttpHeaders();
-        responseHeaders.set(HttpHeaders.AUTHORIZATION, "Bearer " + jwt);
-
-        return ResponseEntity.noContent()
-                             .headers(responseHeaders)
-                             .build();
+    public ResponseEntity<TokenResponseDto> login(@Valid @RequestBody LoginDto loginDto) {
+        log.info("Login attempt for user: {}", loginDto.username());
+        TokenResponseDto token = authService.login(loginDto);
+        return ResponseEntity.ok(token);
     }
 
-    @Hidden
+    @Operation(
+            summary = "Validate token",
+            description = "Internal endpoint for token validation",
+            hidden = true
+    )
     @PostMapping("/validate")
-    public ResponseEntity<Object> validateToken(
-            HttpServletRequest request,
-            @RequestHeader(HttpHeaders.AUTHORIZATION)
-            String headerAuthorization
-    ) {
+    public ResponseEntity<Void> validateToken(
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {
 
-        this.logRequest(request, null);
-
-        var jwt = headerAuthorization.replace("Bearer ", "");
-
-        var userHeader = this.authService.validateToken(jwt);
-
-        var responseHeaders = new HttpHeaders();
-        responseHeaders.set(
-                "userId",
-                userHeader.id()
-                          .toString()
-        );
-        responseHeaders.set("username", userHeader.username());
+        String token = authorization.replace("Bearer ", "");
+        var userHeader = authService.validateToken(token);
 
         return ResponseEntity.ok()
-                             .headers(responseHeaders)
-                             .build();
-
+                .header("userId", userHeader.id().toString())
+                .header("username", userHeader.username())
+                .build();
     }
 
-    private void logRequest(
-            final HttpServletRequest request,
-            final Object obj
-
-
-    ) {
-        log.info(
-                "{} - {} - {} - {} - {}",
-                request.getMethod(),
-                request.getRequestURI(),
-                this.contextHolder.getCorrelationId(),
-                this.contextHolder.getUsername(),
-                obj
-        );
-
+    @Operation(
+            summary = "Logout",
+            description = "Invalidate current session",
+            security = @SecurityRequirement(name = "bearerAuth"),
+            responses = {
+                    @ApiResponse(responseCode = "204", description = "Successfully logged out")
+            }
+    )
+    @PostMapping("/logout")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void logout(@RequestHeader("userId") Long userId) {
+        authService.logout(userId);
     }
 }
