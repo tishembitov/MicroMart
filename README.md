@@ -1,4 +1,4 @@
-# Micromart
+# MicroMart
 
 A microservice architecture on Spring Boot for managing products, orders, inventory, and reviews.
 
@@ -92,4 +92,4 @@ mvn spring-boot:run
 ## Explore the API
 
 - Swagger UI: http://localhost:8080/swagger
-- Postman collection: https://github.com/tishembitov/micromart/raw/main/documentation/postman.json
+- Postman collection: https://github.com/tishembitov/micromart/raw/main/docs/postman.json
