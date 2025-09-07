@@ -1,0 +1,19 @@
+api:
+  user-service: lb://user-service/api/v1/users
+  order-service: lb://order-service/api/v1/orders
+  inventory-service: lb://inventory-service/api/v1/products
+server:
+  port: 8084
+spring:
+  application:
+    name: reviews-service
+  profiles:
+    active: dev
+springdoc:
+  api-docs:
+    path: /api-docs
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics

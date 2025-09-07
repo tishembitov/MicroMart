@@ -1,0 +1,39 @@
+eureka:
+  client:
+    fetch-registry: true
+    register-with-eureka: true
+    service-url:
+      defaultZone: http://eureka-service:8761/eureka/
+server:
+  error:
+    include-exception: true
+spring:
+  datasource:
+    password: postgres
+    url: jdbc:postgresql://db-users:5432/users
+    username: postgres
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  mvc:
+    problemdetails:
+      enabled: false
+jwt:
+  secret: ${JWT_SECRET:your-256-bit-secret-key-for-jwt-token-generation-keep-it-secure}
+  access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:900000} # 15 минут
+
+management:
+  otlp:
+    metrics:
+      export:
+        url: http://otel-collector:4318/v1/metrics
+        step: 10s
+    tracing:
+      endpoint: http://otel-collector:4318/v1/traces
+  tracing:
+    sampling:
+      probability: 1.0
+

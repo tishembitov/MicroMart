@@ -1,0 +1,188 @@
+version: '3.8'
+name: micromart-infra
+services:
+  db-users:
+    container_name: users-infra
+    image: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: users
+    volumes:
+      - db-pgdata-users-infra:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    networks:
+      - micromart-infra
+
+  db-inventory:
+    container_name: inventory-infra
+    image: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: inventory
+    volumes:
+      - db-pgdata-inventory-infra:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    restart: unless-stopped
+    networks:
+      - micromart-infra
+
+  db-reviews:
+    container_name: reviews-infra
+    image: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: reviews
+    volumes:
+      - db-pgdata-reviews-infra:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+    restart: unless-stopped
+    networks:
+      - micromart-infra
+
+  db-orders:
+    container_name: orders-infra
+    image: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: orders
+    volumes:
+      - db-pgdata-orders-infra:/var/lib/postgresql/data
+    ports:
+      - "5435:5432"
+    restart: unless-stopped
+    networks:
+      - micromart-infra
+
+  zookeeper:
+    container_name: zookeeper-infra
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  broker:
+    container_name: broker-infra
+    image: confluentinc/cp-kafka:latest
+    ports:
+      - "9092:9092"
+    expose:
+      - "29092"
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://broker:29092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+
+  init-broker:
+    container_name: init-broker-infra
+    image: confluentinc/cp-kafka:latest
+    depends_on:
+      - broker
+    entrypoint: ['/bin/sh', '-c']
+    command: |
+      "
+      # blocks until kafka is reachable
+      kafka-topics --bootstrap-server broker:29092 --list
+
+      echo -e 'Creating kafka topics'
+      kafka-topics --bootstrap-server broker:29092 --create --if-not-exists --topic order.created.v1
+
+      echo -e 'Successfully created the following topics:'
+      kafka-topics --bootstrap-server broker:29092 --list
+      "
+  otel-collector:
+    container_name: otel-collector-infra
+    image: otel/opentelemetry-collector-contrib:0.96.0
+    restart: unless-stopped
+    command:
+      - --config=/etc/otelcol-contrib/otel-collector.yaml
+    volumes:
+      - ./otel-collector/otel-collector.yaml:/etc/otelcol-contrib/otel-collector.yaml
+    ports:
+      - "1888:1888" # pprof extension
+      - "8888:8888" # Prometheus metrics exposed by the collector
+      - "8889:8889" # Prometheus exporter metrics
+      - "13133:13133" # health_check extension
+      - "4317:4317" # OTLP gRPC receiver
+      - "4318:4318" # OTLP http receiver
+      - "55679:55679" # zpages extension
+    networks:
+      - micromart-infra
+
+  prometheus:
+    container_name: prometheus-infra
+    image: prom/prometheus
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yaml
+    volumes:
+      - ./prometheus/prometheus.yaml:/etc/prometheus/prometheus.yaml
+    ports:
+      - "9090:9090"
+    networks:
+      - micromart-infra
+
+  grafana:
+    container_name: grafana-infra
+    image: grafana/grafana:latest
+    volumes:
+      - ./grafana/grafana-datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+    ports:
+      - "3000:3000"
+    networks:
+      - micromart-infra
+
+  loki:
+    container_name: loki-infra
+    image: grafana/loki:latest
+    command: -config.file=/etc/loki/local-config.yaml
+    ports:
+      - "3100:3100"
+    networks:
+      - micromart-infra
+
+  zipkin:
+    container_name: zipkin-infra
+    image: openzipkin/zipkin
+    restart: unless-stopped
+    ports:
+      - "9411:9411"
+    networks:
+      - micromart-infra
+
+  tempo:
+    container_name: tempo-infra
+    image: grafana/tempo:latest
+    command: [ "-config.file=/etc/tempo.yaml" ]
+    volumes:
+      - ./tempo/tempo.yaml:/etc/tempo.yaml
+    ports:
+      - "3200:3200"   # tempo
+      - "4317"  # otlp grpc
+    networks:
+      - micromart-infra
+
+
+volumes:
+  db-pgdata-users-infra:
+  db-pgdata-inventory-infra:
+  db-pgdata-reviews-infra:
+  db-pgdata-orders-infra:
+
+networks:
+  micromart-infra:
+    driver: bridge
+

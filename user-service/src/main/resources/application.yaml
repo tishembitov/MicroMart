@@ -1,0 +1,15 @@
+server:
+  port: 8081
+spring:
+  application:
+    name: user-service
+  profiles:
+    active: dev
+springdoc:
+  api-docs:
+    path: /api-docs
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics
