@@ -7,5 +7,5 @@ FROM openjdk:17
 VOLUME /tmp
 COPY --from=build /usr/app/target/*.jar order-service.jar
 ENTRYPOINT ["java","-jar","/order-service.jar"]
-EXPOSE 8084
+EXPOSE 8085
 

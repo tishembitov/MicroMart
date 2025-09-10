@@ -140,7 +140,8 @@ services:
     restart: unless-stopped
     depends_on:
       - eureka-service
-      - db-users
+      - db-orders
+      - broker
     networks:
       - micromart-dev
 
