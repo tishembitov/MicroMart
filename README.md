@@ -2,6 +2,10 @@
 
 A microservice architecture on Spring Boot for managing products, orders, inventory, and reviews.
 
+## Arhitecture
+
+![Arhitecture](images/arhitecture.png)
+
 ## Services
 
 - API Gateway — entry point that routes client traffic to downstream services.
